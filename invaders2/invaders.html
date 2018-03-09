@@ -19,6 +19,7 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-example', { preload: p
 function preload() {
 
 	/// add all your assets/games/invaders/bullet
+	game.load.image('starfield', 'assets/games/invaders/starfield.png');
     game.load.spritesheet('kaboom', 'assets/games/invaders/explode.png', 128, 128);
 }
 
