@@ -11,6 +11,7 @@
     </style>
 </head>
 <body>
+	<div id ='1'></div>
 
 <script type="text/javascript">
 
@@ -24,7 +25,7 @@ function preload() {
     game.load.image('ship', 'assets/games/invaders/bar.png');
     game.load.spritesheet('kaboom', 'assets/games/invaders/explode.png', 128, 128);
     game.load.image('starfield', 'assets/games/invaders/starfield.png');
-    game.load.image('background', 'assets/games/starstruck/background2.png');
+    //game.load.image('background', 'assets/games/starstruck/background2.png');
 
 }
 
@@ -88,6 +89,7 @@ function create() {
     aliens = game.add.group();
     aliens.enableBody = true;
     aliens.physicsBodyType = Phaser.Physics.ARCADE;
+	//aliens.body.overlapWorldBounds = true;
 
     createAliens();
 
@@ -173,27 +175,29 @@ function update() {
 
         if (cursors.left.isDown)
         {
+			if (player.body.x > 0)
             player.body.velocity.x = -200;
         }
         else if (cursors.right.isDown)
         {
+			if (player.body.x < 730)
             player.body.velocity.x = 200;
         }
 
 	if (cursors.up.isDown)
         {
+			//document.getElementById("1").innerHTML = player.body.y;
+			if (player.body.y > 0)
             player.body.velocity.y = -200;
+			
         }
         else if (cursors.down.isDown)
         {
+			//document.getElementById("1").innerHTML = player.body.y;
+			if (player.body.y < 580)
             player.body.velocity.y = 200;
         }
 
-     /*   //  Firing?
-        if (fireButton.isDown)
-        {
-            fireBullet();
-        }*/
 
         if (game.time.now > firingTimer)
         {
@@ -201,16 +205,22 @@ function update() {
         }
 
         //  Run collision
-	game.physics.arcade.collide(player, enemyBullets);
-	game.physics.arcade.collide(enemyBullets, aliens, hit, null, this);
-        game.physics.arcade.overlap(bullets, aliens, collisionHandler, null, this);
-        game.physics.arcade.overlap(enemyBullets, player, enemyHitsPlayer, null, this);
+	game.physics.arcade.collide(player, enemyBullets,Reflective,null,this);
+	game.physics.arcade.overlap(enemyBullets, aliens, hit, null, this);
+    //game.physics.arcade.overlap(bullets, aliens, collisionHandler, null, this);
+    //game.physics.arcade.overlap(enemyBullets, player, enemyHitsPlayer, null, this);
+	game.physics.arcade.overlap(aliens, player, enemyOverlapPlayer, null, this);
     }
 
 }
+function Reflective(bullet){
+	bullet.body.velocity.y = bullet.body.velocity.y *-1;
+	document.getElementById("1").innerHTML = bullet.body.velocity.y;
+	
+}
 
-function hit(enemyBullets, alien) {  
-   // enemyBullets.kill();
+function hit(enemyBullet, alien) {  
+    enemyBullet.kill();
     alien.kill();
 
     //  Increase the score
@@ -227,7 +237,7 @@ function hit(enemyBullets, alien) {
         score += 1000;
         scoreText.text = scoreString + score;
 
-        enemyBullets.callAll('kill',this);
+       // enemyBullets.callAll('kill',this);
         stateText.text = " You Won, \n Click to restart";
         stateText.visible = true;
 
@@ -274,11 +284,42 @@ function collisionHandler (bullet, alien) {
     }
 
 }
-
-function enemyHitsPlayer (player,bullet) {
+/*
+function enemyHitsPlayer (player,alien) {
     
-    bullet.kill();
+    //bullet.kill();
 
+    //live = lives.getFirstAlive();
+
+    //if (live)
+    //{
+      //  live.kill();
+    //}
+
+    //  And create an explosion :)
+    /*var explosion = explosions.getFirstExists(false);
+    explosion.reset(player.body.x, player.body.y);
+    explosion.play('kaboom', 30, false, true);*/
+
+    // When the player dies
+    /*if (lives.countLiving() < 1)
+    {
+        player.kill();
+        enemyBullets.callAll('kill');
+
+        stateText.text=" GAME OVER \n Click to restart";
+        stateText.visible = true;
+
+        //the "click to restart" handler
+        game.input.onTap.addOnce(restart,this);
+    }*/
+
+ 
+
+//}*/
+function enemyOverlapPlayer (player,alien) {
+   
+    alien.kill();
     live = lives.getFirstAlive();
 
     if (live)
@@ -286,7 +327,7 @@ function enemyHitsPlayer (player,bullet) {
         live.kill();
     }
 
-    //  And create an explosion :)
+      //And create an explosion :)
     var explosion = explosions.getFirstExists(false);
     explosion.reset(player.body.x, player.body.y);
     explosion.play('kaboom', 30, false, true);
@@ -328,7 +369,12 @@ function enemyFires () {
         // randomly select one of them
         var shooter=livingEnemies[random];
         // And fire the bullet from this enemy
-        enemyBullet.reset(shooter.body.x, shooter.body.y);
+		if (shooter.body.y < 300){
+        enemyBullet.reset(shooter.body.x, shooter.body.y +100);
+		}
+		else{
+			enemyBullet.reset(shooter.body.x, shooter.body.y -100);
+			} 
 
         game.physics.arcade.moveToObject(enemyBullet,player,120);
         firingTimer = game.time.now + 2000;
@@ -366,15 +412,27 @@ function restart () {
 
     //  A new level starts
     
-    //resets the life count
-    lives.callAll('revive');
+
     //  And brings the aliens back from the dead :)
     aliens.removeAll();
-    createAliens();
-
+	createAliens();
+    
+    //resets the life count
+    lives.callAll('revive');
+	//alert(lives.countLiving());
+	
     //revives the player
     player.revive();
+	player.reset(400, 500);
+	//player.visible =true;
+	//player.alive=true;
+	//player.x=400;
+	//player.y=500;
+
+	//player.remove();
+	//player =game.add.sprite(400, 500, 'ship'); 
     //hides the text
+
     stateText.visible = false;
 
 }
