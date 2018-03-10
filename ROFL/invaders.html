@@ -44,7 +44,9 @@ var lives;
 var enemyBullet;
 var firingTimer = 0;
 var stateText;
+//var levetText;
 var livingEnemies = [];
+var level=1;
 
 function create() {
 
@@ -96,6 +98,9 @@ function create() {
     //  The score
     scoreString = 'Score : ';
     scoreText = game.add.text(10, 10, scoreString + score, { font: '34px Arial', fill: '#fff' });
+	
+	levelString = 'Level : ';
+    levelText = game.add.text(220, 10, levelString +level, { font: '34px Arial', fill: '#fff' });
 
     //  Lives
     lives = game.add.group();
@@ -105,6 +110,11 @@ function create() {
     stateText = game.add.text(game.world.centerX,game.world.centerY,' ', { font: '84px Arial', fill: '#fff' });
     stateText.anchor.setTo(0.5, 0.5);
     stateText.visible = false;
+	/*
+	stateText = game.add.text(game.world.centerX,game.world.centerY,' ', { font: '84px Arial', fill: '#fff' });
+    stateText.anchor.setTo(0.5, 0.5);
+    stateText.visible = false;
+    */
 
     for (var i = 0; i < 3; i++) 
     {
@@ -136,6 +146,7 @@ function createAliens () {
             alien.animations.add('fly', [ 0, 1, 2, 3 ], 20, true);
             alien.play('fly');
             alien.body.moves = false;
+			alien.body.collideWorldBounds = true;
         }
     }
 
@@ -159,11 +170,22 @@ function setupInvader (invader) {
 
 function descend() {
 
-    aliens.y += 10;
+    aliens.y += 10*level;
 
 }
 
 function update() {
+	// see if all aliens are die. go to the nnext level
+	    if (aliens.countLiving() == 0)
+    {
+		level = level +1;
+        score += 100;
+        scoreText.text = scoreString + score;
+		levelText.text = levelString + level;
+        enemyBullets.callAll('kill',this);
+		createAliens();
+    }
+	
 
     //  Scroll the background
     starfield.tilePosition.y += 2;
@@ -203,15 +225,53 @@ function update() {
         {
             enemyFires();
         }
+		/*for (i =0 ; i < aliens.length; i++){
+			if (aliens[i].body.y >= 600){
+				//lose(aliens[i]);
+				alert (i);
+				
+			}
+		}*/
+		
 
         //  Run collision
 	game.physics.arcade.collide(player, enemyBullets,Reflective,null,this);
 	game.physics.arcade.overlap(enemyBullets, aliens, hit, null, this);
+	//game.physics.arcade.collide(aliens,  game.world.bounds, lose, null, this);
     //game.physics.arcade.overlap(bullets, aliens, collisionHandler, null, this);
     //game.physics.arcade.overlap(enemyBullets, player, enemyHitsPlayer, null, this);
 	game.physics.arcade.overlap(aliens, player, enemyOverlapPlayer, null, this);
+	aliens.forEach(lose,this);
     }
+	
+	
 
+}
+function lose(alien){
+	if (alien.body.y > 580){
+	 alien.kill();
+	 live = lives.getFirstAlive();
+    if (live)
+    {
+        live.kill();
+    }
+	var explosion = explosions.getFirstExists(false);
+    explosion.reset(player.body.x, player.body.y);
+    explosion.play('kaboom', 30, false, true);
+	}
+	    if (lives.countLiving() < 1)
+    {
+        player.kill();
+        enemyBullets.callAll('kill');
+
+        stateText.text=" GAME OVER \n Click to restart";
+        stateText.visible = true;
+		level=1;
+		score=0;
+
+        //the "click to restart" handler
+        game.input.onTap.addOnce(restart,this);
+    }
 }
 function Reflective(bullet){
 	bullet.body.velocity.y = bullet.body.velocity.y *-1;
@@ -238,11 +298,11 @@ function hit(enemyBullet, alien) {
         scoreText.text = scoreString + score;
 
        // enemyBullets.callAll('kill',this);
-        stateText.text = " You Won, \n Click to restart";
-        stateText.visible = true;
+       // stateText.text = " You Won, \n Click to restart";
+        // stateText.visible = true;
 
         //the "click to restart" handler
-        game.input.onTap.addOnce(restart,this);
+        //game.input.onTap.addOnce(restart,this);
     }
 }
 
@@ -272,15 +332,17 @@ function collisionHandler (bullet, alien) {
 
     if (aliens.countLiving() == 0)
     {
-        score += 1000;
+		level = level +1;
+        score += 100;
         scoreText.text = scoreString + score;
 
         enemyBullets.callAll('kill',this);
-        stateText.text = " You Won, \n Click to restart";
-        stateText.visible = true;
+        //stateText.text = " You Won, \n Click to restart";
+        //stateText.visible = true;
 
         //the "click to restart" handler
-        game.input.onTap.addOnce(restart,this);
+        //game.input.onTap.addOnce(restart,this);
+		createAliens();
     }
 
 }
@@ -321,6 +383,7 @@ function enemyOverlapPlayer (player,alien) {
    
     alien.kill();
     live = lives.getFirstAlive();
+	
 
     if (live)
     {
@@ -340,6 +403,8 @@ function enemyOverlapPlayer (player,alien) {
 
         stateText.text=" GAME OVER \n Click to restart";
         stateText.visible = true;
+		level=1;
+		score=0;
 
         //the "click to restart" handler
         game.input.onTap.addOnce(restart,this);
@@ -370,14 +435,14 @@ function enemyFires () {
         var shooter=livingEnemies[random];
         // And fire the bullet from this enemy
 		if (shooter.body.y < 300){
-        enemyBullet.reset(shooter.body.x, shooter.body.y +100);
+        enemyBullet.reset(shooter.body.x, shooter.body.y +50);
 		}
 		else{
-			enemyBullet.reset(shooter.body.x, shooter.body.y -100);
+			enemyBullet.reset(shooter.body.x, shooter.body.y -50);
 			} 
 
         game.physics.arcade.moveToObject(enemyBullet,player,120);
-        firingTimer = game.time.now + 2000;
+        firingTimer = game.time.now + 500;
     }
 
 }
@@ -424,6 +489,7 @@ function restart () {
     //revives the player
     player.revive();
 	player.reset(400, 500);
+	level = 1 ;
 	//player.visible =true;
 	//player.alive=true;
 	//player.x=400;
