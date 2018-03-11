@@ -448,8 +448,13 @@ function enemyFires () {
 
     if (enemyBullet && livingEnemies.length > 0)
     {
-        
-        var random=game.rnd.integerInRange(0,livingEnemies.length-1);
+        if (livingEnemies.length > 10){
+        	var random=game.rnd.integerInRange(livingEnemies.length-10,livingEnemies.length-1);
+	}
+	else{
+		var random = game.rnd.integerInRange(0, livingEnemies.length-1);
+	}
+
 
         // randomly select one of them
         var shooter=livingEnemies[random];
